@@ -1,5 +1,5 @@
 % This script sets the model parameters for the SLS 3-D Printer
-
+%\rash
 % Example: Specifying a Dynamics Block
 % n = [1 2 3];
 % d = [4 5 6];
