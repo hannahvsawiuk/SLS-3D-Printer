@@ -62,15 +62,14 @@ TotalMass    = Q0(Weight)/10^3 + Q1(Weight)/10^3 + Massring; % Motor weights are
 
 % Electrical Motor Dynamics
 % --------------------------------------------
-% The armature impedance (not just conductance since not only the armature resistance is considered) 
-% is the electrical component of motor response.
+% The armature admittance is the electrical component of motor response.
 % The motors eletrical characteristics can be modeled with an armature circuit, 
 % where the terminal impedance is represented as a resistor and inductor in series.
-% Z=1/(sLa + Ra) -> Y = sLa + Ra
+% Z = sLa + Ra -> Y=1/(sLa + Ra)
 Ra0 	= Q0(TermR);		 % Terminal (armature) resistance 
 La0 	= Q0(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
-Elec0n  = [La0 Ra0];         % Numerator
-Elec0d  = 1;	
+Elec0n  = 1;         		 % Numerator
+Elec0d  = [La0 Ra0];	
 % --------------------------------------------
 
 % Torque Const & Back EMF
@@ -150,12 +149,11 @@ StFric0      = uSF*TotalWeight;         % Fs = us*Ns,
 
 % Electrical Motor Dynamics
 % --------------------------------------------
-% explanation same as for Q0 electrical motor dynamics
 Ra1 	= Q1(TermR);		 % Terminal (armature) resistance 
-La1 	= Q1(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
-Elec1n  = [La1 Ra1];         % Numerator
-Elec1d  = 1;		         % Denominator
-% --------------------------------------------
+La1 	= 10(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
+Elec1n  = 1;         		 % Numerator
+Elec1d  = [La1 Ra1];	
+% ---------------------
 
 % Torque Const & Back EMF
 % --------------------------------------------
