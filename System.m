@@ -15,27 +15,33 @@
 % Q(n) refers to element at index=n of MotorParam. 
 % Parameters found in the AMAX22_5W_SB motor file, and the corresponding indices to the parameters are found in CONSTANTS.m
 
-NomI0   = Q0(NomCurr);      	   % Max average current
+% Q0
+NomI0   = Q0(NomCurr);             % Max average current
 StallI0 = Q0(StallCurr);           % Max peak current
+NomQ0   = Q0(NomV)                 % Nominal voltage 
+
+% Q1
 NomI1   = Q1(NomCurr);      	   % Max average current
 StallI1 = Q1(StallCurr);           % Max peak current
+NomQ1   = Q1(NomV)                 % Nominal voltage 
 
 %============================================%
 % 			 Amplifier Dynamics              %
 %============================================%
 % Compute transfer function of amplifier. R,L,C values are defined in CONSTANTS.m
-R1 		= R1*10^6;		  % Mohm->ohm
-C 		= C/10^6;			  % uF->F
-L 		= L/10^3;			  % mH->H	
-% The amplifier dynamics will be the same for both the motors
+AmpR1 		= R1*10^6;		      % Mohm->ohm
+AmpC 		= C/10^6;			  % uF->F
+AmpL 		= L/10^3;			  % mH->H	
+% The amplifier dynamics will be the same for both the motors since they use the same amplifier circuitry
+
 % Q0
-Amp0n   = [C*R1*R2-L];               % Numerator
-Amp0d   = [L*C*R1 C*R1*R2]           % Denominator
-AmpSat0 = Q0(NomV);					 % DC gain = nominal voltage 
+Amp0n   = [AmpC*AmpR1*R2-AmpL];                     % Numerator (C*R1*R2 - L)
+Amp0d   = [AmpL*AmpC*AmpR1 AmpC*AmpR1*R2]           % Denominator ((L*C*R1)s + (C*R1*R2))
+AmpSat0 = NomQ0;					                % Set such that the maximum motor voltage is not exceeded (Nominal Voltage) 
 % Q1
-Amp1n   = [C*R1*R2-L];               % Numerator
-Amp1d   = [L*C*R1 C*R1*R2]           % Denominator
-AmpSat1 = Q1(NomV);					 % DC gain = nominal voltage
+Amp1n   = [AmpC*AmpR1*R2-AmpL];                     % Numerator (C*R1*R2 - L)
+Amp1d   = [AmpL*AmpC*AmpR1 AmpC*AmpR1*R2]           % Denominator ((L*C*R1)s + (C*R1*R2))
+AmpSat1 = NomQ1;					                % Set such that the maximum motor voltage is not exceeded (Nominal Voltage)
 
 %============================================%
 % 			 System Parameters               %
@@ -44,16 +50,20 @@ AmpSat1 = Q1(NomV);					 % DC gain = nominal voltage
 
 % Mass of system (motors and ring)
 % --------------------------------------------
-% Total Mass = Mass Q0 + Mass Q1 + Mass of aluminum ring
 % The values for the motors are given, so just the mass of the ring needs to be calculated.
 % Mass = volume*density
-Rout 	     = linkR1/10^3;   			% Inner radius of wrist frame, mm->m
-Rin          = linkR2/10^3;   			% Outer radius of wrist frame, mm->m
-Depth        = linkD/10^3;	     		% Depth of wrist frame, mm->
-Ringvol      = pi(Rout^2-Rin^2)*Depth;  % Volume of the ring
-RingDensity  = RhoAl*10^3;				% Density of 6061 Al, g/cm^3->kg/m^3: g/cm^3*(1kg/1000g)*(100^3cm^3/1m^3)=kg/m^3*10^3      
-Massring 	 = Ringvol*RingDensity;
-TotalMass    = Q0(Weight)/10^3 + Q1(Weight)/10^3 + Massring; % Motor weights are gram, g->kg: g=kg/10^3
+Rout 	     = LinkR1/10^3;   			    % Inner radius of wrist frame, mm->m
+Rin          = LinkR2/10^3;   			    % Outer radius of wrist frame, mm->m
+Depth        = LinkD/10^3;	     		    % Depth of wrist frame, mm->m
+DistCentre   = LinkOff/10^3;                % Distance from motor face to centre, mm->m
+LengthQ0     = Q0(Length)/10^3;             % Length of motor Q0, mm->m
+LengthQ1     = Q1(Length)/10^3;             % Length of motor Q1, mm->m
+Ringvol      = pi(Rout^2-Rin^2)*Depth;      % Volume of the ring
+RingDensity  = RhoAl*10^3;				    % Density of 6061 Al, g/cm^3->kg/m^3: g/cm^3*(1kg/1000g)*(100^3cm^3/1m^3)=kg/m^3*10^3      
+MassRing 	 = Ringvol*RingDensity;         % Mass of ring = volume * density
+MassQ0       = Q0(Weight)/10^3;             % Mass of motor Q0
+MassQ0       = Q1(Weight)/10^3;             % Mass of motor Q1
+TotalMass    = MassQ0 + MassQ1 + MassRing;  % Total mass = Mass of Q1 + Mass of Q2 + Mass of Ring
 % --------------------------------------------
 
 %============================================%
@@ -68,8 +78,8 @@ TotalMass    = Q0(Weight)/10^3 + Q1(Weight)/10^3 + Massring; % Motor weights are
 % Z = sLa + Ra -> Y=1/(sLa + Ra)
 Ra0 	= Q0(TermR);		 % Terminal (armature) resistance 
 La0 	= Q0(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
-Elec0n  = 1;         		 % Numerator
-Elec0d  = [La0 Ra0];	
+Elec0n  = 1;         		 % Numerator (s)
+Elec0d  = [La0 Ra0];	     % Denominator (sL + R)
 % --------------------------------------------
 
 % Torque Const & Back EMF
@@ -94,17 +104,29 @@ BackEMF0 = 1/(Q0(SpdK)*RadPSecPerRPM);  % SpdK is the speed constant in rpm/v, c
 % and J0MotorQ1 is the moment of inertia of motor Q1 with respect to motor Q0
 
 % J0Internal: rotational inertia of Q0, which is a given parameter.
-J0Internal = Q0(rotJ)/10^7;    % gcm^2->kgm^2: gcm^2*(1kg/1000 g)*(1m^2/100^2cm^2)=kgm^2/10^7
+J0Internal = Q0(rotJ)/10^7;    % Internal Motor Inertia, gcm^2->kgm^2: gcm^2*(1kg/1000 g)*(1m^2/100^2cm^2)=kgm^2/10^7
 
-% J0Ring: the moment of inertia for a hollow cylinder about the y-axis is given by:
-Din    = 2*Rin;      				% Inner diameter of wrist frame
-Dout   = 2*Rout; 	  				% Outer radius of wrist frame
-J0Ring = (1/4)*Massring*((Din^2+Dout^2)/4 + (Depth^2)/3);
+% J0Ring: the moment of inertia (about y axis) for a hollow cylinder about the y-axis is given by:
+Din    = 2*Rin;      				                        % Inner diameter of wrist frame
+Dout   = 2*Rout; 	  				                        % Outer radius of wrist frame
+J0Ring = (1/4)*MassRing*((Din^2+Dout^2)/4 + (Depth^2)/3);   % Inertia of Ring, Moment of Inertia Calculation for  a Hollow Ring
 
-% J0MotorQ1: the moment of inertia of motor Q1 with respect to motor Q0
-J0MotorQ1 = ;
+% J0MotorQ1: the moment of inertia of motor Q1 (about y axis) with respect to motor Q0
+% The inertia will be calculated for two cylinders separately. One cylinder will extend from the end of the motor Q1 to the centre
+% of the ring (Cylinder 1). The other cylinder will extend from the start of motor Q1 to the centre of the ring. The substraction 
+% of these inertias will give the inertia of a the motor Q1 without the counterweight. By assuming that the counterweight has the 
+% same mass as motor Q1, this result can be multiplied by 2 to get the total inertia of the motor Q1 system about the y axis.
+M10 = MassQ1 + (DistCentre/LengthQ1)*MassQ1;                 % Mass of Cylinder 1 (calculated assuming uniform density in motor Q1)
+M20 = (DistCentre/LengthQ1)*MassQ1                           % Mass of Cylinder 2 (calculated assuming uniform density in motor Q1)
+% Inertia about y axis with respect to the end of a cylinder
+% Iend = mL^2/3
+J10 = M10*(LengthQ1 + DistCentre)^2/3;                       % Inertia of Cylinder 1 about the y-axis
+J20 = M20*(DistCentre)^2/3;                                  % Inertia of Cylinder 2 about the y-axis
+J0MotorQ1 = (J1 - J0) * 2;                                   % Total inertia of motor Q1 system about the y axis
 
 % J0
+% The mass of the parts in which the ring and the motor Q1 system overlap will be accounted for
+% twice, but this is negligible
 J0 = J0Ring + J0Internal + J0MotorQ1;			% units: Nms^2/rad
 % --------------------------------------------
 
@@ -121,9 +143,9 @@ K0 = (SpringK/10^3)/(2*pi);   					% Spring constant, mNm/rev->Nm/rad
 
 % Mechanical Dynamics Vectors
 % --------------------------------------------
-Mech0n  = [1 0];               % Numerator
-Mech0d  = [J0 B0 K0];          % Denominator
-JntSat0 =  Q0(NomV); 
+Mech0n  = [1 0];               % Numerator (s)
+Mech0d  = [J0 B0 K0];          % Denominator (Js^2 + Bs + K)
+JntSat0 =  2*pi;               % Motor 0 does not have an angle limit so 2pi is used 
 % --------------------------------------------
 
 % Sensor Dynamics
@@ -150,9 +172,9 @@ StFric0      = uSF*TotalWeight;         % Fs = us*Ns,
 % Electrical Motor Dynamics
 % --------------------------------------------
 Ra1 	= Q1(TermR);		 % Terminal (armature) resistance 
-La1 	= 10(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
-Elec1n  = 1;         		 % Numerator
-Elec1d  = [La1 Ra1];	
+La1 	= Q0(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
+Elec1n  = 1;         		 % Numerator (1)
+Elec1d  = [La1 Ra1];	     % Denominator (sL + R)
 % ---------------------
 
 % Torque Const & Back EMF
@@ -167,7 +189,8 @@ BackEMF1 = 1/(Q1(SpdK)*RadPSecPerRPM); 		   	   % SpdK is the speed constant in 
 % J: Moment of Inertia
 % --------------------------------------------
 % The total moment of inertia associated with motor Q1 is J1 = J1Internal
-% J1Internal is given by the rotational inertia of Q1, which is a given parameter
+% J1Internal is given by just the rotational inertia of Q1, which is a given parameter
+% because the mass of the laser is negligible
 J1Internal = Q1(rotJ)/10^7;    % gcm^2->kgm^2: gcm^2*(1kg/1000 g)*(1m^2/100^2cm^2)=kgm^2/10^7
 J1 = J1Internal;			   % units: Nms^2/rad
 % --------------------------------------------
@@ -185,11 +208,11 @@ K1 = (SpringK/10^3)/(2*pi);   % Spring constant, mNm/rev->Nm/rad
 
 % Mechanical Dynamics Vectors
 % --------------------------------------------
-Mech1n  = [1 0];              % Numerator
-Mech1d  = [J1 B1 K1];		  % Denominator
+Mech1n  = [1 0];              % Numerator (s)
+Mech1d  = [J1 B1 K1];		  % Denominator (Js^2 + Bs + K)
 % Transfer function: 
 % Normalized transfer function: 
-JntSat1  =  Q1(NomV); % KDC 
+JntSat1  =  Q1(JntLim)*RadPerDeg;     % Joint saturation is the angle limit of motor Q1, deg->rad 
 % --------------------------------------------
 
 % Sensor Dynamics
