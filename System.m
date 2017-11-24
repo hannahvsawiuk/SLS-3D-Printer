@@ -63,7 +63,7 @@ RingDensity  = RhoAl*10^3;				        % Density of 6061 Al, g/cm^3->kg/m^3: g/cm
 MassRing 	 = Ringvol*RingDensity;             % Mass of ring = volume * density
 MassQ0       = Q0(Weight)/10^3;                 % Mass of motor Q0, g->kg
 MassQ1       = Q1(Weight)/10^3;                 % Mass of motor Q1, g->kg
-TotalMass    = 2*MassQ0 + 2*MassQ1 + MassRing;  % Total mass, assuming that the counter weights are the same weight as the motors
+TotalMass    = 2*MassQ1 + MassRing;             % Total mass that is being supported by Q0. It is assumed that the counterweight for Q1 possesses the same mass as Q1
 % --------------------------------------------
 
 %============================================%
@@ -132,8 +132,9 @@ J0 = J0Ring + J0Internal + J0MotorQ1;			% units: Nms^2/rad
 
 % B: Damping Coefficient
 % --------------------------------------------
-STGrad0 = Q0(SpdTorqueGrad)*10^3*RadPSecPerRPM; % SpdTorqueGrad: rpm/mNm->rpm/Nm->rad/Nms = STGrad 
-B0  = 1/STGrad0;		   				        % units: Nms/rad
+INoLoad0 = Q0(NoLoadCurr)/10^3;                % mA->
+SNoLoad0 = Q0(NoLoadSpd)*RadPSecPerRPM;        % rpm->rad/s
+B0  = (INoLoad0*TConst0)/SNoLoad0;             % units: Nms/rad
 % --------------------------------------------
 
 % K: Dynamic friction constant
@@ -145,7 +146,7 @@ K0 = (SpringK/10^3)/(2*pi);   					% Spring constant, mNm/rev->Nm/rad
 % --------------------------------------------
 Mech0n  = [1 0];               % Numerator (s)
 Mech0d  = [J0 B0 K0];          % Denominator (Js^2 + Bs + K)
-JntSat0 =  2*pi;               % Motor 0 does not have an angle limit so 2pi is used 
+JntSat0 = Big;                 % Motor 0 does not have an angle limit
 % --------------------------------------------
 
 % Sensor Dynamics
@@ -162,7 +163,7 @@ SensSat0 =  SensV;
 % Weight = Weight of Q0 + Weight of Q1 + Weight of ring -> Ns = Weight = Mass*g
 % The total mass was calculated at the beginning of the file
 TotalWeight  = TotalMass*G; 			% G is the gravitational acceleration
-StFric0      = 0.5*uSF*TotalWeight/10^6;   % Fs = us*Ns, uNm->Nm, /2 since the counter weight exerts a normal force of 1/2 of the total weight 
+StFric0      = uSF*TotalWeight/10^6;    % Fs = us*Ns, uNm->Nm, /2 since the counter weight exerts a normal force of 1/2 of the total weight 
 % --------------------------------------------
 
 %============================================%
@@ -196,14 +197,15 @@ J1 = J1Internal;			   % units: Nms^2/rad
 
 % B: Damping Coefficient
 % --------------------------------------------
-STGrad1 = Q1(SpdTorqueGrad)*10^3*RadPSecPerRPM; % SpdTorqueGrad: rpm/mNm->rpm/Nm->rad/Nms = STGrad 
-B1  = 1/STGrad1;		   				    % units: Nms/rad
+INoLoad1 = 10(NoLoadCurr)/10^3;                % mA->
+SNoLoad1 = Q1(NoLoadSpd)*RadPSecPerRPM;        % rpm->rad/s
+B1  = (INoLoad1*TConst1)/SNoLoad1;             % units: Nms/rad
 % --------------------------------------------
 
 % Mechanical Dynamics Vectors
 % --------------------------------------------
 Mech1n  = [1];              % Numerator (1<)
-Mech1d  = [J1 B1];		  % Denominator (Js + Bs)
+Mech1d  = [J1 B1];		    % Denominator (Js + Bs)
 % Transfer function: 
 % Normalized transfer function: 
 JntSat1  =  JntLim*RadPerDeg;     % Joint saturation is the angle limit of motor Q1, deg->rad 
@@ -232,4 +234,4 @@ M0	=	tf(Mech0n,Mech0d);         % Mechanical Motor Dynamics
 %============================================%
 A1	=	tf(Amp1n,Amp1d);           % AmpDynLifier
 E1	=	tf(Elec1n,Elec1d);         % Electrical Motor Dynamics
-M1	=	tf(Mech1n,Mech1d);         % Mechanical Motor DynamicsA
+M1	=	tf(Mech1n,Mech1d);         % Mechanical Motor Dynamics
