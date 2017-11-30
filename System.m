@@ -4,8 +4,9 @@
 
 % Motor Unit Conversions
 % ----------------------
- AMAX22_5W_SB;                % Default Maxon motor
+ AMAX22_6W_SB;                % Default Maxon motor
  Q0 = MotorParam;
+ AMAX12_p75W_SB;
  Q1 = MotorParam;
 
 %============================================%
@@ -132,7 +133,7 @@ J0 = J0Ring + J0Internal + J0MotorQ1;			% units: Nms^2/rad
 
 % B: Damping Coefficient
 % --------------------------------------------
-INoLoad0 = Q0(NoLoadCurr)/10^3;                % mA->
+INoLoad0 = 2*Q0(NoLoadCurr)/10^3;                % mA->
 SNoLoad0 = Q0(NoLoadSpd)*RadPSecPerRPM;        % rpm->rad/s
 B0  = (INoLoad0*TConst0)/SNoLoad0;             % units: Nms/rad
 % --------------------------------------------
@@ -197,7 +198,7 @@ J1 = J1Internal;			   % units: Nms^2/rad
 
 % B: Damping Coefficient
 % --------------------------------------------
-INoLoad1 = 10(NoLoadCurr)/10^3;                % mA->
+INoLoad1 = Q1(NoLoadCurr)/10^3;                % mA->
 SNoLoad1 = Q1(NoLoadSpd)*RadPSecPerRPM;        % rpm->rad/s
 B1  = (INoLoad1*TConst1)/SNoLoad1;             % units: Nms/rad
 % --------------------------------------------
