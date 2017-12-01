@@ -4,9 +4,14 @@
 
 % Motor Unit Conversions
 % ----------------------
- AMAX22_6W_SB;                % Default Maxon motor
+% Of all the 25 combinations of motors, the following combo produces a
+% scenario where the settle time is small and the peak is reasonable for 
+% both the motors. Although the settle time for Q0 is not the smallest 
+% of the combinations, its peak value is
+%
+ AMAX22_6W_SB;	                
  Q0 = MotorParam;
- AMAX12_p75W_SB;
+ AMAX12_p75W_SB;		
  Q1 = MotorParam;
 
 %============================================%
@@ -110,7 +115,7 @@ J0Internal = Q0(RotJ)/10^7;    % Internal Motor Inertia, gcm^2->kgm^2: gcm^2*(1k
 % J0Ring: the moment of inertia (about y axis) for a hollow cylinder about the y-axis is given by:
 Din    = 2*Rin;      				                        % Inner diameter of wrist frame
 Dout   = 2*Rout; 	  				                        % Outer radius of wrist frame
-J0Ring = (1/4)*MassRing*((Din^2+Dout^2)/4 + (Depth^2)/3);   % Inertia of Ring, Moment of Inertia Calculation for  a Hollow Ring
+J0Ring = (1/4)*MassRing*((Din^2+Dout^2)/4 +(Depth^2)/3);   % Inertia of Ring, Moment of Inertia Calculation for  a Hollow Ring
 
 % J0MotorQ1: the moment of inertia of motor Q1 (about y axis) with respect to motor Q0
 % The inertia will be calculated for two cylinders separately. One cylinder will extend from the end of the motor Q1 to the centre
@@ -123,7 +128,7 @@ M20 = (RCenter/LengthQ1)*MassQ1                           % Mass of Cylinder 2 (
 % Iend = mL^2/3
 J10 = M10*(LengthQ1 + RCenter)^2/3;                       % Inertia of Cylinder 1 about the y-axis
 J20 = M20*(RCenter)^2/3;                                  % Inertia of Cylinder 2 about the y-axis
-J0MotorQ1 = (J10 - J20) * 2;                                   % Total inertia of motor Q1 system about the y axis
+J0MotorQ1 = (J10 - J20) * 2;                              % Total inertia of motor Q1 system about the y axis
 
 % J0
 % The mass of the parts in which the ring and the motor Q1 system overlap will be accounted for
@@ -133,7 +138,7 @@ J0 = J0Ring + J0Internal + J0MotorQ1;			% units: Nms^2/rad
 
 % B: Damping Coefficient
 % --------------------------------------------
-INoLoad0 = 2*Q0(NoLoadCurr)/10^3;                % mA->
+INoLoad0 = 2*Q0(NoLoadCurr)/10^3;              % mA->
 SNoLoad0 = Q0(NoLoadSpd)*RadPSecPerRPM;        % rpm->rad/s
 B0  = (INoLoad0*TConst0)/SNoLoad0;             % units: Nms/rad
 % --------------------------------------------
@@ -174,7 +179,7 @@ StFric0      = uSF*TotalWeight/10^6;    % Fs = us*Ns, uNm->Nm, /2 since the coun
 % Electrical Motor Dynamics
 % --------------------------------------------
 Ra1 	= Q1(TermR);		 % Terminal (armature) resistance 
-La1 	= Q0(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
+La1 	= Q1(TermL)/10^3;	 % Terminal (armature) inductance, mH->H
 Elec1n  = 1;         		 % Numerator (1)
 Elec1d  = [La1 Ra1];	     % Denominator (sL + R)
 % ---------------------
@@ -236,3 +241,53 @@ M0	=	tf(Mech0n,Mech0d);         % Mechanical Motor Dynamics
 A1	=	tf(Amp1n,Amp1d);           % AmpDynLifier
 E1	=	tf(Elec1n,Elec1d);         % Electrical Motor Dynamics
 M1	=	tf(Mech1n,Mech1d);         % Mechanical Motor Dynamics
+
+%============================================%
+% 		  Q1 Transfer Functions              %
+%============================================%
+INT = tf(1,[1 0]); % integrator: 1/s
+
+% Q0
+% G0_1 = E0*TConst0*M0;
+% T0_1 = feedback(G0_1,BackEMF0);
+% % Open loop gain for Q0
+% GH0_zpk = zpk(A0*T0_1*INT);
+% GH0 = minreal(GH0_zpk);
+% dcgain0 = dcgain(GH0);
+% GH0_norm = GH0/dcgain0;
+% % pid_num0 = [1.2815e+08];
+% % pid_den0 = [1, 15279.1702128,748862.340426,0];
+% % GH0_pid = zpk(tf(pid_num0,pid_den0));
+% T0 = feedback(GH0,1);
+
+%with friction
+T0_2 = feedback(M0,StFric0);
+G0_1 = E0*TConst0*T0_2;
+T0_1 = feedback(G0_1,BackEMF0);
+GH0 = A0*T0_1*INT;
+GH0 = zpk(GH0);
+KDC0 = dcgain(GH0);
+T0 = feedback(GH0,1);
+
+% Q1
+G1_1 = E1*TConst1*M1; 
+T1_1 = feedback(G1_1,BackEMF1);
+% Open loop gain for Q1
+GH1_zpk = zpk(A1*T1_1*INT);
+GH1 = minreal(GH1_zpk);
+dcgain1 = dcgain(GH1);
+GH1_norm = GH1/dcgain1;
+T1 = feedback(GH1,1);
+
+
+
+
+
+
+
+
+
+
+
+
+
