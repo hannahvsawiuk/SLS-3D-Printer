@@ -9,39 +9,55 @@ GHPID1 = zpk(tf([1.4146e10],[1 40450.60 2044240 0]));
 % ----------------------
 % No more than 3 significant figures per gain value.
 
+SF0 = 1.1;
+SF1 = 1;
+
+% PID0 Tuners
+SFP0 = 1.5;
+SFI0 = 1.2;
+SFD0 = 1.2;
+
+% PID1 Tuners
+SFP1 = 1.5;
+SFI1 = 1;
+SFD1 = 1;
 % Q0 scale factors
-SFP0 = 5;
-SFI0 = 1;
-SFD0 = 1;
+% SFP0 = 1.5;
+% SFI0 = 1;
+% SFD0 = 1;
 
 % Q0 constants
-Ku0 = 7.17*10^(-2);
+Ku0 = SF0*7.17*10^(-2);
 Kp0 = SFP0*(1.95)*(Ku0);
 Ki0 = SFI0*(96.77)*(Ku0);
 Kd0 = SFD0*(Ku0);
 
 % Q1 scale factors
-SFP1 = 1;
-SFI1 = 1;
-SFD1 = 1;
+% SFP1 = 1.5;
+% SFD1 = 1;
 
 % Q1 constants
-Ku1 = 1.83*10^(-3);
+Ku1 = SF1*1.83*10^(-3);
 Kp1 = SFP1*(49.17)*(Ku1);
-Ki1 = SFI1*(0)*(Ku1);
+Ki1 = (0)*(Ku1); % The pole at zero makes Q1 a PD controller
 Kd1 = SFD1*(Ku1);
 
 PID0 = [Kp0 Ki0 Kd0];
 PID1 = [Kp1 Ki1 Kd1];
 
-INT = tf(1,[1 0]); % integrator: 1/s
-N = 100; % filter coefficient
-
-pidt0 = zpk(Kp0 + Ki0*INT + Kd0*(N/(1+N*INT)));
-tune0_ol = pidt0*GHPID0;
-tune0 = feedback(tune0_ol,1);
-step(tune0);
-disp(stepinfo(tune0));
+% N = 100; % filter coefficient
+% 
+% pidt0 = zpk(Kp0 + Ki0*INT + Kd0*(N/(1+N*INT)));
+% tune0_ol = pidt0*T0_4;
+% tune0 = feedback(tune0_ol,1);
+% % step(tune0);
+% % disp(stepinfo(tune0));
+% 
+% pidt1 = zpk(Kp1 + Kd1*(N/(1+N*INT)));
+% tune1_ol = pidt1*T1_3;
+% tune1 = feedback(tune1_ol,1);
+% step(tune1);
+% % disp(stepinfo(tune0));
 
 % Feedback Sensor Values
 % ----------------------

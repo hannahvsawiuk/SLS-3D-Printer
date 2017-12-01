@@ -260,27 +260,28 @@ INT = tf(1,[1 0]); % integrator: 1/s
 % % GH0_pid = zpk(tf(pid_num0,pid_den0));
 % T0 = feedback(GH0,1);
 
-%with friction
-T0_2 = feedback(M0,StFric0);
-G0_1 = E0*TConst0*T0_2;
-T0_1 = feedback(G0_1,BackEMF0);
-GH0 = A0*T0_1*INT;
-GH0 = zpk(GH0);
-KDC0 = dcgain(GH0);
-T0 = feedback(GH0,1);
 
-% Q1
-G1_1 = E1*TConst1*M1; 
-T1_1 = feedback(G1_1,BackEMF1);
+T0_1 = feedback(M0,StFric0);
+T0_2 = E0*TConst0*T0_1;
+T0_3 = feedback(T0_2,BackEMF0);
+% Open loop gain for Q0
+T0_4 = A0*T0_3*INT;
+GH0_zpk = zpk(A0*T0_3*INT);
+GH0 = minreal(GH0_zpk);
+
+KDC0 = dcgain(GH0_zpk);
+GH0_norm = GH0/KDC0;
+
 % Open loop gain for Q1
-GH1_zpk = zpk(A1*T1_1*INT);
+T1_1 = E1*TConst1*M1; 
+T1_2 = feedback(T1_1,BackEMF1);
+T1_3 = A1*T1_2*INT;
+GH1_zpk = zpk(A1*T1_2*INT);
 GH1 = minreal(GH1_zpk);
-dcgain1 = dcgain(GH1);
-GH1_norm = GH1/dcgain1;
-T1 = feedback(GH1,1);
 
-GHPID0 = zpk(tf([1.282e08],[1 15279.1702128 748862.340426 0]));
-GHPID1 = zpk(tf([1.4146e10],[1 40450.60 2044240 0]));
+KDC1 = dcgain(GH1);
+GH1_norm = GH1/KDC1;
+
 
 
 
