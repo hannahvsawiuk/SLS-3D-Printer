@@ -279,6 +279,8 @@ dcgain1 = dcgain(GH1);
 GH1_norm = GH1/dcgain1;
 T1 = feedback(GH1,1);
 
+GHPID0 = zpk(tf([1.282e08],[1 15279.1702128 748862.340426 0]));
+GHPID1 = zpk(tf([1.4146e10],[1 40450.60 2044240 0]));
 
 
 

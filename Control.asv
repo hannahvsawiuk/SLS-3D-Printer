@@ -20,6 +20,9 @@ Kd1 = (Ku1);
 PID0 = [Kp0 Ki0 Kd0];
 PID1 = [Kp1 Ki1 Kd1];
 
+s = tf([1 0],[1]);
+PID0() + PID0(2)/s + D*(N/(1+N/s));
+
 % Feedback Sensor Values
 % ----------------------
 % The saturation voltage of the sensors is 5V. 
